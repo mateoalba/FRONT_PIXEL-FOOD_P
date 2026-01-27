@@ -2,16 +2,22 @@ import { useState } from 'react';
 import { sucursalesApi } from '@/api/sucursales';
 import type { Sucursal } from '@/types/sucursal';
 import { useCrud } from '@/hooks/useCrud';
-import { DataTable } from '@/components/table/DataTable';
 import { CrudModal } from '@/components/modal/CrudModal';
 import { ConfirmModal } from '@/components/modal/ConfirmModal';
 import ProtectedButton from '@/components/ProtectedButton';
 import type { Field } from '@/components/modal/CrudModal';
 import { useAuth } from '@/hooks/useAuth';
+import { 
+  MapPin, 
+  Plus, 
+  Edit, 
+  Trash2, 
+  Phone,
+  Navigation,
+  AlertCircle
+} from 'lucide-react';
 
 export default function Sucursales() {
-  // 1. Eliminamos 'as any'. TS detecta automáticamente que sucursalesApi 
-  // cumple con CrudService<Sucursal>
   const { data, loading, error, createItem, updateItem, deleteItem } = useCrud<Sucursal>(sucursalesApi);
   const { user } = useAuth();
 
@@ -21,7 +27,6 @@ export default function Sucursales() {
 
   const puedeEditar = user?.permisos.includes('editar_sucursales');
   const puedeEliminar = user?.permisos.includes('eliminar_sucursales');
-  const mostrarAcciones = puedeEditar || puedeEliminar;
 
   const fields: Field<Sucursal>[] = [
     { name: 'nombre', label: 'Nombre de Sucursal', required: true },
@@ -30,81 +35,127 @@ export default function Sucursales() {
   ];
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-semibold text-gray-800">Sucursales</h1>
-        
-        <ProtectedButton permisos={['crear_sucursales']}>
-          <button
-            onClick={() => { setSelected(null); setModalOpen(true); }}
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors shadow-sm font-medium"
-          >
-            Nueva Sucursal
-          </button>
-        </ProtectedButton>
-      </div>
-
-      {/* El error ya se usa aquí, así que no marcará amarillo */}
-      {error && (
-        <p className="text-red-600 bg-red-50 p-3 rounded border border-red-200 mb-4">
-          {error}
-        </p>
-      )}
-
-      <DataTable<Sucursal>
-        columns={[
-          { key: 'nombre', label: 'Nombre' },
-          { key: 'direccion', label: 'Dirección' },
-          { key: 'telefono', label: 'Teléfono' },
-        ]}
-        data={data}
-        loading={loading}
-        renderActions={mostrarAcciones ? (sucursal) => (
-          <div className="flex gap-3">
-            <ProtectedButton permisos={['editar_sucursales']}>
+    <div className="min-h-screen bg-linear-to-br from-[#263238] via-[#37474F] to-[#455A64] pb-10">
+      
+      {/* HEADER ESTILO PIXEL-FOOD */}
+      <div className="bg-[#263238] border-b-4 border-black mb-8" style={{ boxShadow: '0px 4px 0px #000000' }}>
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-[#43A047] border-4 border-black flex items-center justify-center" style={{ boxShadow: '4px 4px 0px #000000' }}>
+                <MapPin className="w-8 h-8 text-white" strokeWidth={3} />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl text-white font-black uppercase leading-relaxed italic">
+                  Gestión de Sucursales
+                </h1>
+                <p className="text-yellow-400 font-bold uppercase text-sm tracking-widest">PIXEL-FOOD - Red de Locales</p>
+              </div>
+            </div>
+            
+            <ProtectedButton permisos={['crear_sucursales']}>
               <button
-                onClick={() => { setSelected(sucursal); setModalOpen(true); }}
-                className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                onClick={() => { setSelected(null); setModalOpen(true); }}
+                className="bg-[#43A047] hover:bg-[#388E3C] text-white border-4 border-black font-black uppercase px-6 py-2 hover:translate-x-1 hover:translate-y-1 transition-all flex items-center gap-2 active:shadow-none"
+                style={{ boxShadow: '4px 4px 0px #000000' }}
               >
-                Editar
-              </button>
-            </ProtectedButton>
-
-            <ProtectedButton permisos={['eliminar_sucursales']}>
-              <button
-                onClick={() => { setSelected(sucursal); setConfirmOpen(true); }}
-                className="text-red-600 hover:text-red-800 font-medium transition-colors"
-              >
-                Eliminar
+                <Plus className="w-5 h-5" strokeWidth={4} /> Nueva Sucursal
               </button>
             </ProtectedButton>
           </div>
-        ) : undefined}
-      />
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 max-w-6xl">
+        {error && (
+          <div className="bg-white border-4 border-black p-4 mb-6 text-[#E53935] font-black flex items-center gap-2 shadow-[4px_4px_0px_#000000]">
+            <AlertCircle className="w-5 h-5" /> {error}
+          </div>
+        )}
+
+        {/* LISTADO DE TARJETAS CON ANIMACIÓN AL PASAR EL MOUSE */}
+        <div className="flex flex-col gap-6">
+          {loading ? (
+             <div className="text-center py-20 text-white font-black uppercase text-xl animate-pulse">
+               Cargando sucursales...
+             </div>
+          ) : data.map((branch) => (
+            <div 
+              key={branch.id_sucursal} 
+              className="bg-white border-4 border-black p-8 flex flex-col md:flex-row justify-between items-center relative group w-full transition-all duration-200 hover:-translate-y-1 hover:translate-x-1"
+              style={{ boxShadow: '8px 8px 0px #000000' }}
+            >
+              {/* Botones de acción - Posición Superior Derecha */}
+              <div className="absolute top-3 right-3 flex gap-2">
+                {puedeEditar && (
+                  <button 
+                    onClick={() => { setSelected(branch); setModalOpen(true); }}
+                    className="p-1.5 border-2 border-black bg-gray-50 hover:bg-yellow-400 transition-colors shadow-[2px_2px_0px_#000000] active:shadow-none"
+                  >
+                    <Edit className="w-3.5 h-3.5 text-black" strokeWidth={3} />
+                  </button>
+                )}
+                {puedeEliminar && (
+                  <button 
+                    onClick={() => { setSelected(branch); setConfirmOpen(true); }}
+                    className="p-1.5 border-2 border-black bg-gray-50 hover:bg-red-500 hover:text-white transition-colors shadow-[2px_2px_0px_#000000] active:shadow-none"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-black" strokeWidth={3} />
+                  </button>
+                )}
+              </div>
+
+              {/* Contenido principal */}
+              <div className="flex items-center gap-6 w-full md:w-auto">
+                <div className="w-16 h-16 bg-emerald-50 border-4 border-black flex items-center justify-center shrink-0 shadow-[3px_3px_0px_#000000]">
+                   <Navigation className="w-8 h-8 text-[#43A047]" strokeWidth={2.5} />
+                </div>
+                <div className="flex flex-col">
+                  <h3 className="font-black text-[#263238] uppercase text-2xl leading-none mb-2">
+                    {branch.nombre}
+                  </h3>
+                  <div className="flex flex-col md:flex-row md:items-center gap-x-6 gap-y-2">
+                    <span className="text-gray-600 font-bold text-sm flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-[#43A047]" /> {branch.direccion}
+                    </span>
+                    <span className="text-gray-600 font-bold text-sm flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-[#43A047]" /> {branch.telefono}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Estado de Sucursal */}
+              <div className="mt-6 md:mt-0 md:mr-16">
+                 <span className="bg-[#C8E6C9] text-[#2E7D32] border-2 border-black px-4 py-1 font-black text-xs uppercase shadow-[2px_2px_0px_#000000]">
+                    Sucursal Activa
+                 </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <CrudModal<Sucursal>
         open={modalOpen}
-        title={selected ? 'Editar Sucursal' : 'Nueva Sucursal'}
+        title={selected ? 'EDITAR SUCURSAL' : 'NUEVA SUCURSAL'}
         initialData={selected || undefined}
         fields={fields}
         onSubmit={(form) => {
-            // Eliminamos el 'as any' del payload usando desestructuración limpia
-            // Extraemos los campos que NO queremos enviar al backend
-            const { id_sucursal, mesas, ...payload } = form as Partial<Sucursal & { mesas: any }>; 
-
-            if (selected) {
-                updateItem(selected.id_sucursal, payload);
-            } else {
-                createItem(payload);
-            }
-            setModalOpen(false);
+          const { id_sucursal, mesas, ...payload } = form as Partial<Sucursal & { mesas: any }>; 
+          if (selected) {
+            updateItem(selected.id_sucursal, payload);
+          } else {
+            createItem(payload);
+          }
+          setModalOpen(false);
         }}
         onClose={() => { setModalOpen(false); setSelected(null); }}
       />
 
       <ConfirmModal
         open={confirmOpen}
-        title="Eliminar Sucursal"
+        title="¿ELIMINAR SUCURSAL?"
         message={`¿Estás seguro de eliminar la sucursal "${selected?.nombre}"?`}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={() => {

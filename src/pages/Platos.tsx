@@ -10,13 +10,19 @@ import { ConfirmModal } from '@/components/modal/ConfirmModal';
 import { RecetasModal } from '@/components/modal/RecetasModal';
 import ProtectedButton from '@/components/ProtectedButton';
 import { useAuth } from '@/hooks/useAuth';
+import { 
+  Plus, 
+  ChefHat, 
+  Edit, 
+  Trash2, 
+  AlertCircle, 
+  LayoutGrid 
+} from 'lucide-react';
 
 export default function Platos() {
   const { data, loading, error, createItem, updateItem, deleteItem } = useCrud<Plato>(platosApi);
   const { user } = useAuth();
   
-  // 1. LÓGICA DE PERMISOS GRANULARES (Igual que en Ingredientes)
-  // Ajustamos para que verifique el array de permisos y el rol
   const puedeEditarTodo = user?.permisos.includes('editar_platos') && user?.rol?.toLowerCase() !== 'empleado';
   const esEmpleado = user?.rol?.toLowerCase() === 'empleado';
 
@@ -38,14 +44,12 @@ export default function Platos() {
     fetchCats();
   }, []);
 
-  // 2. CONFIGURACIÓN DE CAMPOS ADAPTADA
   const fields: Field<Plato>[] = [
     { 
       name: 'nombre', 
       label: 'Nombre del Plato', 
       type: 'text', 
       required: true,
-      // Se bloquea si estamos EDITANDO y el usuario no tiene permiso total
       disabled: !!(selected && !puedeEditarTodo) 
     },
     { 
@@ -67,7 +71,7 @@ export default function Platos() {
       name: 'disponible', 
       label: '¿Está Disponible?', 
       type: 'select', 
-      disabled: false, // SIEMPRE habilitado para que el empleado actualice stock
+      disabled: false, 
       options: [
         { label: 'Sí (Disponible)', value: true as any },
         { label: 'No (Agotado)', value: false as any }
@@ -83,101 +87,139 @@ export default function Platos() {
     }
   ];
 
-  if (error) {
-    return (
-      <div className="p-6 text-center">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg inline-block shadow-sm">
-          <p className="font-bold">Error en la carga de datos</p>
-          <p className="text-sm">{error}</p>
-          <button onClick={() => window.location.reload()} className="mt-2 text-xs underline font-semibold">
-            Reintentar
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Gestión de Platos</h1>
-          <p className="text-sm text-gray-500">
-            Bienvenido, <span className="font-semibold text-blue-600">{user?.nombre || 'Usuario'}</span>.
-            {esEmpleado 
-              ? ' Solo tienes permiso para cambiar la disponibilidad de los platos.' 
-              : ' Administra el menú, precios y categorías.'}
-          </p>
-        </div>
-
-        <ProtectedButton permisos={['crear_platos']}>
-          <button 
-            onClick={() => { setSelected(null); setModalOpen(true); }} 
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all shadow-md font-medium"
-          >
-            + Nuevo Plato
-          </button>
-        </ProtectedButton>
-      </div>
-
-      <DataTable<Plato>
-        data={data}
-        loading={loading}
-        columns={[
-          { key: 'nombre', label: 'Nombre' },
-          { 
-            key: 'precio', 
-            label: 'Precio', 
-            render: (p) => `$${Number(p.precio).toFixed(2)}` 
-          },
-          { 
-            key: 'categoria', 
-            label: 'Categoría', 
-            render: (p) => p.categoria?.nombre || <span className="text-gray-400 italic text-xs">Sin categoría</span> 
-          },
-          { 
-            key: 'disponible', 
-            label: 'Estado', 
-            render: (p) => (
-              <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
-                p.disponible ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-              }`}>
-                {p.disponible ? 'Disponible' : 'Agotado'}
-              </span>
-            ) 
-          }
-        ]}
-        renderActions={(plato) => (
-          <div className="flex gap-4">
-            <ProtectedButton permisos={['ver_recetas']}>
-              <button 
-                onClick={() => { setSelected(plato); setRecetaOpen(true); }} 
-                className="text-orange-600 hover:text-orange-800 font-bold text-xs uppercase"
+    <div className="min-h-screen bg-linear-to-br from-[#263238] via-[#37474F] to-[#455A64] pb-10 font-sans">
+      
+      {/* HEADER ESTILO CATEGORÍAS */}
+      <div className="bg-[#263238] border-b-4 border-black mb-8" style={{ boxShadow: '0px 4px 0px #000000' }}>
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-[#E53935] border-4 border-black flex items-center justify-center" style={{ boxShadow: '4px 4px 0px #000000' }}>
+                <LayoutGrid className="w-8 h-8 text-white" strokeWidth={3} />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl text-white font-black uppercase leading-relaxed">
+                  Gestión de Menú
+                </h1>
+                <p className="text-yellow-400 font-bold uppercase text-sm tracking-widest">PIXEL-FOOD - Control de Platos</p>
+              </div>
+            </div>
+            
+            <ProtectedButton permisos={['crear_platos']}>
+              <button
+                onClick={() => { setSelected(null); setModalOpen(true); }}
+                className="bg-[#FB8C00] hover:bg-[#f57c00] text-white border-4 border-black font-black uppercase px-6 py-2 hover:translate-x-1 hover:translate-y-1 transition-transform flex items-center gap-2"
+                style={{ boxShadow: '4px 4px 0px #000000' }}
               >
-                Ingredientes
-              </button>
-            </ProtectedButton>
-
-            <button 
-                onClick={() => { setSelected(plato); setModalOpen(true); }} 
-                className="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase"
-            >
-                {esEmpleado ? 'Disponibilidad' : 'Editar'}
-            </button>
-
-            <ProtectedButton permisos={['eliminar_platos']}>
-              <button 
-                onClick={() => { setSelected(plato); setConfirmOpen(true); }} 
-                className="text-red-600 hover:text-red-800 font-bold text-xs uppercase"
-              >
-                Eliminar
+                <Plus className="w-5 h-5" strokeWidth={4} /> Nuevo Plato
               </button>
             </ProtectedButton>
           </div>
-        )}
-      />
+        </div>
+      </div>
 
+      <div className="container mx-auto px-4">
+        {error && (
+          <div className="bg-white border-4 border-black p-4 mb-6 text-[#E53935] font-black flex items-center gap-2 shadow-[4px_4px_0px_#000000]">
+            <AlertCircle className="w-5 h-5" /> {error}
+          </div>
+        )}
+
+        {/* CONTENEDOR DE TABLA ESTILO CATEGORÍAS */}
+        <div className="bg-white border-4 border-black" style={{ boxShadow: '8px 8px 0px #000000' }}>
+          <div className="bg-linear-to-r from-orange-50 to-yellow-50 border-b-4 border-black p-6">
+            <h2 className="text-[#263238] font-black uppercase text-xl">Listado Maestro de Platos</h2>
+          </div>
+          
+          <div className="p-6">
+            {loading ? (
+              <div className="flex justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-[#E53935]"></div>
+              </div>
+            ) : (
+              <div className="overflow-hidden">
+                <DataTable<Plato>
+                  data={data}
+                  loading={loading}
+                  columns={[
+                    { 
+                      key: 'nombre', 
+                      label: 'Nombre',
+                      render: (p) => (
+                        <div className="flex flex-col">
+                          <span className="font-black text-[#263238] uppercase italic">{p.nombre}</span>
+                          <span className="text-[10px] text-gray-400 font-bold uppercase truncate max-w-50">{p.descripcion}</span>
+                        </div>
+                      )
+                    },
+                    { 
+                      key: 'precio', 
+                      label: 'Precio', 
+                      render: (p) => <span className="font-black text-[#1E88E5] text-lg">${Number(p.precio).toFixed(2)}</span> 
+                    },
+                    { 
+                      key: 'categoria', 
+                      label: 'Categoría', 
+                      render: (p) => (
+                        <span 
+                          className="bg-[#FB8C00] text-white px-2 py-1 border-2 border-black font-black uppercase text-[10px] inline-block shadow-[2px_2px_0px_#000000]" 
+                        >
+                          {p.categoria?.nombre || 'General'}
+                        </span>
+                      )
+                    },
+                    { 
+                      key: 'disponible', 
+                      label: 'Estado', 
+                      render: (p) => (
+                        <span className={`px-3 py-1 border-2 border-black font-black text-[10px] uppercase inline-block shadow-[2px_2px_0px_#000000] ${
+                          p.disponible ? 'bg-[#43A047] text-white' : 'bg-[#E53935] text-white'
+                        }`}>
+                          {p.disponible ? 'Disponible' : 'Agotado'}
+                        </span>
+                      ) 
+                    }
+                  ]}
+                  renderActions={(plato) => (
+                    <div className="flex flex-wrap gap-2">
+                      <ProtectedButton permisos={['ver_recetas']}>
+                        <button 
+                          onClick={() => { setSelected(plato); setRecetaOpen(true); }} 
+                          className="p-2 border-2 border-black font-black bg-white hover:bg-purple-400 transition-colors shadow-[2px_2px_0px_#000000]"
+                          title="Ver Receta"
+                        >
+                          <ChefHat className="w-4 h-4 text-black" strokeWidth={3} />
+                        </button>
+                      </ProtectedButton>
+
+                      <button 
+                          onClick={() => { setSelected(plato); setModalOpen(true); }} 
+                          className="p-2 border-2 border-black font-black bg-white hover:bg-yellow-400 transition-colors shadow-[2px_2px_0px_#000000]"
+                          title={esEmpleado ? 'Disponibilidad' : 'Editar'}
+                      >
+                          <Edit className="w-4 h-4 text-black" strokeWidth={3} />
+                      </button>
+
+                      <ProtectedButton permisos={['eliminar_platos']}>
+                        <button 
+                          onClick={() => { setSelected(plato); setConfirmOpen(true); }} 
+                          className="p-2 border-2 border-black font-black bg-white text-[#E53935] hover:bg-[#E53935] hover:text-white transition-colors shadow-[2px_2px_0px_#000000]"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4" strokeWidth={3} />
+                        </button>
+                      </ProtectedButton>
+                    </div>
+                  )}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* MODALES */}
       <RecetasModal 
         open={recetaOpen} 
         plato={selected} 
@@ -186,13 +228,11 @@ export default function Platos() {
 
       <CrudModal<Plato>
         open={modalOpen}
-        title={esEmpleado ? 'Actualizar Disponibilidad' : (selected ? 'Editar Plato' : 'Crear Plato')}
+        title={esEmpleado ? 'ACTUALIZAR DISPONIBILIDAD' : (selected ? 'EDITAR PLATO' : 'CREAR NUEVO PLATO')}
         initialData={selected || undefined}
         fields={fields}
         onSubmit={(form) => {
           const { id_plato, categoria, recetas, ...payload } = form as any;
-          
-          // 3. SEGURIDAD EN SUBMIT: Si es empleado, solo enviamos el estado
           const finalPayload = esEmpleado 
             ? { disponible: String(payload.disponible) === 'true' }
             : {
@@ -214,8 +254,8 @@ export default function Platos() {
 
       <ConfirmModal
         open={confirmOpen}
-        title="Confirmar Eliminación"
-        message={`¿Estás seguro de que deseas eliminar el plato "${selected?.nombre}"?`}
+        title="¡ALERTA DE ELIMINACIÓN!"
+        message={`¿Estás seguro de que deseas borrar "${selected?.nombre}" del sistema? Esta acción no se puede deshacer.`}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={() => {
           if (selected) deleteItem(selected.id_plato);

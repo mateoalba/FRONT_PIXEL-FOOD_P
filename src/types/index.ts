@@ -9,7 +9,7 @@ export * from './receta';
 export * from './pedido';
 export * from './factura';
 export * from './detalle_pedido';
-
+export * from './reserva';
 
 
 

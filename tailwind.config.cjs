@@ -5,7 +5,7 @@ export default {
     extend: {
       fontFamily: {
         // Ahora puedes usar la clase 'font-pixel' en tu HTML
-        pixel: ['"Press Start 2P"', 'system-ui'],
+        pixel: ['"Press Start 2P"', 'system-ui', 'cursive'],
       },
     },
   },

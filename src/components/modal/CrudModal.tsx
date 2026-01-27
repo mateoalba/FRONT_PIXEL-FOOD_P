@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import { X, CheckCircle2 } from 'lucide-react';
 
 export interface Field<T> {
   name: keyof T;
   label: string;
   required?: boolean;
-  type?: 'text' | 'password' | 'select' | 'number' | 'email';
+  type?: 'text' | 'password' | 'select' | 'number' | 'email' | 'date' | 'time';
   options?: { label: string; value: any }[];
   disabled?: boolean;
   min?: number;
@@ -18,7 +19,7 @@ interface Props<T> {
   fields: Field<T>[];
   onSubmit: (data: Partial<T>) => void;
   onClose: () => void;
-  children?: ReactNode; // Ya lo tienes en la interfaz 👍
+  children?: ReactNode;
 }
 
 export function CrudModal<T>({
@@ -28,7 +29,7 @@ export function CrudModal<T>({
   fields,
   onSubmit,
   onClose,
-  children, // 1. 👈 Recibimos children aquí
+  children,
 }: Props<T>) {
   const [form, setForm] = useState<Partial<T>>({});
 
@@ -82,83 +83,113 @@ export function CrudModal<T>({
     onSubmit(cleaned);
   };
 
+  // ESTILO DE INPUTS PIXEL-FOOD (Aumentado para el nuevo tamaño)
   const inputClass = (isDisabled?: boolean) => `
-    w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none transition-all
+    w-full bg-[#F4F7F6] border-2 border-gray-200 rounded-2xl px-5 py-4 
+    text-lg font-bold text-[#263238] outline-none transition-all
     ${isDisabled 
-      ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' 
-      : 'focus:ring-2 focus:ring-blue-500 hover:border-gray-400'}
+      ? 'opacity-50 cursor-not-allowed bg-gray-200' 
+      : 'focus:border-[#E53935] hover:border-gray-300 shadow-sm'}
   `;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md border border-gray-100">
-        <div className="flex justify-between items-center mb-5 border-b pb-2">
-          <h2 className="text-xl font-bold text-gray-800">{title}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+    <div className="fixed inset-0 bg-[#263238]/90 backdrop-blur-md flex items-center justify-center z-100 p-4 md:p-10">
+      
+      {/* CONTENEDOR XL: max-w-4xl lo hace mucho más alargado */}
+      <div className="bg-white rounded-[2.5rem] shadow-[0_35px_60px_-15px_rgba(0,0,0,0.5)] w-full max-w-4xl border border-white/20 overflow-hidden transform transition-all">
+        
+        {/* HEADER GRANDE */}
+        <div className="bg-[#263238] p-10 flex justify-between items-center relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-2 h-full bg-[#E53935]"></div>
+          <div>
+            <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter">
+              {title}
+            </h2>
+            <p className="text-[#E53935] text-xs font-black tracking-[0.3em] uppercase mt-1">Gestión de Sistema / Pixel-Food</p>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="text-white/30 hover:text-[#E53935] transition-all p-3 hover:bg-white/5 rounded-full"
+          >
+            <X className="w-8 h-8" />
+          </button>
         </div>
 
-        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
-          {/* 2. 👈 Lógica Condicional */}
-          {children ? (
-            children
-          ) : (
-            <>
-              {fields.map(field => (
-                <div key={String(field.name)}>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">
-                    {field.label} {field.required && <span className="text-red-500">*</span>}
-                  </label>
+        <div className="p-10">
+          <div className="max-h-[65vh] overflow-y-auto pr-4 custom-scrollbar">
+            {children ? (
+              <div className="w-full">{children}</div>
+            ) : (
+              <>
+                {/* GRID DE 2 COLUMNAS para aprovechar el ancho */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                  {fields.map(field => (
+                    <div key={String(field.name)} className={field.type === 'text' && String(field.name).includes('nombre') ? 'md:col-span-2' : ''}>
+                      <label className="block text-[12px] font-black text-gray-400 uppercase tracking-[0.3em] mb-3 ml-2">
+                        {field.label} {field.required && <span className="text-[#E53935]">*</span>}
+                      </label>
 
-                  {field.type === 'select' ? (
-                    <select
-                      value={(form[field.name] as any) || ''}
-                      onChange={e => handleChange(field.name, e.target.value)}
-                      disabled={field.disabled}
-                      className={inputClass(field.disabled)}
-                      required={field.required}
-                    >
-                      <option value="">Seleccione una opción...</option>
-                      {field.options?.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      type={field.type || 'text'}
-                      value={(form[field.name] as any) || ''}
-                      onChange={e => handleChange(field.name, e.target.value, field)}
-                      disabled={field.disabled}
-                      min={field.min ?? (field.type === 'number' ? 0 : undefined)}
-                      onKeyDown={(e) => {
-                        if (field.type === 'number' && e.key === '-') e.preventDefault();
-                      }}
-                      className={inputClass(field.disabled)}
-                      placeholder={field.type === 'password' ? '••••••••' : `Ingrese ${field.label.toLowerCase()}`}
-                      required={field.required}
-                    />
-                  )}
+                      {field.type === 'select' ? (
+                        <div className="relative">
+                          <select
+                            value={(form[field.name] as any) || ''}
+                            onChange={e => handleChange(field.name, e.target.value)}
+                            disabled={field.disabled}
+                            className={`${inputClass(field.disabled)} appearance-none cursor-pointer`}
+                            required={field.required}
+                          >
+                            <option value="" className="text-gray-400">Seleccionar opción...</option>
+                            {field.options?.map(opt => (
+                              <option key={opt.value} value={opt.value} className="text-[#263238] font-bold">
+                                {opt.label}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                            ▼
+                          </div>
+                        </div>
+                      ) : (
+                        <input
+                          type={field.type || 'text'}
+                          value={(form[field.name] as any) || ''}
+                          onChange={e => handleChange(field.name, e.target.value, field)}
+                          disabled={field.disabled}
+                          min={field.min ?? (field.type === 'number' ? 0 : undefined)}
+                          onKeyDown={(e) => {
+                            if (field.type === 'number' && e.key === '-') e.preventDefault();
+                          }}
+                          className={inputClass(field.disabled)}
+                          placeholder={field.type === 'password' ? '••••••••' : `Ingresar datos...`}
+                          required={field.required}
+                        />
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
 
-              {/* Los botones solo se muestran si NO hay children */}
-              <div className="flex justify-end gap-3 mt-8">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-5 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 font-medium transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  className="px-5 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-medium shadow-md transition-colors"
-                >
-                  Guardar Cambios
-                </button>
-              </div>
-            </>
-          )}
+                {/* ACCIONES ALARGADAS */}
+                <div className="flex flex-col md:flex-row gap-4 mt-12 pt-8 border-t-2 border-gray-50">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="order-2 md:order-1 flex-1 text-gray-400 font-black py-5 rounded-2xl uppercase text-xs tracking-[0.3em] hover:bg-gray-50 hover:text-[#263238] transition-all"
+                  >
+                    Descartar y Salir
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    className="order-1 md:order-2 flex-2 bg-[#E53935] text-white font-black py-5 rounded-2xl text-xl uppercase italic tracking-tighter hover:bg-[#c62828] shadow-[0_10px_30px_-10px_rgba(229,57,53,0.5)] transition-all flex items-center justify-center gap-3"
+                  >
+                    <CheckCircle2 className="w-7 h-7" />
+                    Guardar Configuración
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

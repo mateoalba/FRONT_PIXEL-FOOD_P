@@ -3,16 +3,24 @@ import { recetasApi } from '@/api/recetas';
 import type { Receta } from '@/types/receta';
 import type { Plato } from '@/types/plato';
 import { useCrud } from '@/hooks/useCrud';
-import { DataTable } from '@/components/table/DataTable';
 import { RecetasModal } from '@/components/modal/RecetasModal';
 import { ConfirmModal } from '@/components/modal/ConfirmModal';
 import { useState, useEffect, useMemo } from 'react';
-import ProtectedButton from '@/components/ProtectedButton'; // 👈 Importamos el protector
-import { useAuth } from '@/hooks/useAuth'; // 👈 Ocupamos tu hook de auth para cambiar el texto
+import ProtectedButton from '@/components/ProtectedButton';
+import { useAuth } from '@/hooks/useAuth';
+import { 
+  ChefHat, 
+  Plus, 
+  Trash2, 
+  Edit3, 
+  Package, 
+  AlertCircle,
+  Eye
+} from 'lucide-react';
 
 export default function Recetas() {
-  const { data: recetas, loading, refresh, deleteItem } = useCrud<Receta>(recetasApi);
-  const { user } = useAuth(); // 👈 Obtenemos el usuario actual
+  const { data: recetas, loading, error, refresh, deleteItem } = useCrud<Receta>(recetasApi);
+  const { user } = useAuth();
   const [platos, setPlatos] = useState<Plato[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -53,80 +61,136 @@ export default function Recetas() {
     refresh();
   };
 
-  // Verificamos si es administrador para la lógica del texto
   const esAdmin = user?.rol === 'admin';
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Maestro de Recetas</h1>
-          <p className="text-sm text-gray-500">Configura los ingredientes de cada plato de tu menú</p>
+    <div className="min-h-screen bg-linear-to-br from-[#263238] via-[#37474F] to-[#455A64] pb-10 font-sans">
+      
+      {/* HEADER ESTILO FIGMA */}
+      <div className="bg-[#263238] border-b-4 border-black mb-8" style={{ boxShadow: '0px 4px 0px #000000' }}>
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-[#E53935] border-4 border-black flex items-center justify-center" style={{ boxShadow: '4px 4px 0px #000000' }}>
+                <ChefHat className="w-8 h-8 text-white" strokeWidth={3} />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl text-white font-black uppercase leading-relaxed">
+                  Maestro de Recetas
+                </h1>
+                <p className="text-yellow-400 font-bold uppercase text-sm tracking-widest">PIXEL-FOOD - Control de Producción</p>
+              </div>
+            </div>
+            
+            <ProtectedButton permisos={['crear_recetas']}>
+              <button
+                onClick={() => { setSelectedPlato(null); setModalOpen(true); }}
+                className="bg-[#FB8C00] hover:bg-[#f57c00] text-white border-4 border-black font-black uppercase px-6 py-2 hover:translate-x-1 hover:translate-y-1 transition-transform flex items-center gap-2"
+                style={{ boxShadow: '4px 4px 0px #000000' }}
+              >
+                <Plus className="w-5 h-5" strokeWidth={4} /> Nueva Receta
+              </button>
+            </ProtectedButton>
+          </div>
         </div>
-        
-        {/* 1. PROTECCIÓN DEL BOTÓN PRINCIPAL */}
-        <ProtectedButton permisos={['crear_recetas']}>
-          <button 
-            onClick={() => { setSelectedPlato(null); setModalOpen(true); }}
-            className="bg-orange-600 text-white px-5 py-2 rounded-lg hover:bg-orange-700 transition-all shadow-md font-bold text-sm"
-          >
-            + Nueva Receta
-          </button>
-        </ProtectedButton>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <DataTable
-          loading={loading}
-          data={tableData}
-          columns={[
-            { 
-              key: 'nombre', 
-              label: 'Plato del Menú',
-              render: (p) => (
-                <span className="font-bold text-blue-700 uppercase text-xs">{p.nombre}</span>
-              )
-            },
-            { 
-              key: 'resumen', 
-              label: 'Ingredientes Configurados', 
-              render: (p) => (
-                <div className="flex flex-wrap gap-2">
-                  {p.resumen.map((ing: any) => (
-                    <span key={ing.id_receta} className="bg-slate-50 text-slate-600 px-2 py-1 rounded border text-[11px] font-medium">
-                      <span className="text-orange-500 mr-1">●</span>
-                      {ing.nombre}: <span className="text-blue-600 font-bold">{ing.cantidad} {ing.unidad}</span>
-                    </span>
-                  ))}
-                  {p.resumen.length === 0 && (
-                    <span className="text-gray-400 italic text-[11px]">Sin ingredientes</span>
-                  )}
-                </div>
-              )
-            }
-          ]}
-          renderActions={(p) => (
-            <div className="flex gap-3">
-              {/* 2. EL BOTÓN DE EDITAR SIEMPRE SE VE, PERO CAMBIA EL TEXTO */}
-              <button 
-                onClick={() => { setSelectedPlato(p); setModalOpen(true); }}
-                className="text-indigo-600 hover:text-indigo-800 text-[10px] font-black uppercase"
-              >
-                {esAdmin ? 'EDITAR / GESTIONAR' : 'VER INGREDIENTES'}
-              </button>
+      <div className="container mx-auto px-4">
+        {error && (
+          <div className="bg-white border-4 border-black p-4 mb-6 text-[#E53935] font-black flex items-center gap-2 shadow-[4px_4px_0px_#000000]">
+            <AlertCircle className="w-5 h-5" /> {error}
+          </div>
+        )}
 
-              {/* 3. PROTECCIÓN DEL BOTÓN ELIMINAR TODO */}
-              <ProtectedButton permisos={['eliminar_recetas']}>
-                <button 
-                  onClick={() => { setSelectedPlato(p); setConfirmOpen(true); }}
-                  className="text-red-500 hover:text-red-700 text-[10px] font-black uppercase"
-                >
-                  ELIMINAR TODO
-                </button>
-              </ProtectedButton>
-            </div>
-          )}
-        />
+        {/* CONTENEDOR DE LISTADO */}
+        <div className="bg-white border-4 border-black" style={{ boxShadow: '8px 8px 0px #000000' }}>
+          <div className="bg-linear-to-r from-purple-50 to-pink-50 border-b-4 border-black p-6">
+            <h2 className="text-[#263238] font-black uppercase text-xl">Configuración de Ingredientes por Plato</h2>
+          </div>
+          
+          <div className="p-6">
+            {loading ? (
+              <div className="flex justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-[#E53935]"></div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {tableData.map((plato) => (
+                  <div 
+                    key={plato.id_plato} 
+                    className="border-4 border-black bg-white p-6 hover:translate-x-1 hover:translate-y-1 transition-all relative group"
+                    style={{ boxShadow: '4px 4px 0px #000000' }}
+                  >
+                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                      <div className="flex items-start gap-4 flex-1">
+                        <div className="w-14 h-14 bg-[#9C27B0] border-4 border-black flex items-center justify-center shrink-0" style={{ boxShadow: '3px 3px 0px #000000' }}>
+                          <ChefHat className="w-8 h-8 text-white" strokeWidth={3} />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex flex-wrap items-center gap-3 mb-3">
+                            <h3 className="font-black text-xl text-[#263238] uppercase italic">{plato.nombre}</h3>
+                            <span className="bg-[#E53935] text-white px-2 py-0.5 border-2 border-black font-black text-[10px] uppercase shadow-[2px_2px_0px_#000000]">
+                              {plato.categoria?.nombre || 'General'}
+                            </span>
+                          </div>
+
+                          <div className="mt-4">
+                            <p className="text-[10px] text-gray-400 font-black uppercase mb-3 tracking-tighter">Composición de la Receta:</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {plato.resumen.map((ing: any) => (
+                                <div key={ing.id_receta} className="flex items-center gap-2 bg-gray-50 border-2 border-black p-2 shadow-[2px_2px_0px_#000000]">
+                                  <div className="w-6 h-6 bg-[#43A047] border-2 border-black flex items-center justify-center shrink-0">
+                                    <Package className="w-3 h-3 text-white" strokeWidth={3} />
+                                  </div>
+                                  <span className="text-[11px] font-bold text-[#263238] uppercase truncate">
+                                    {ing.nombre}: <span className="text-blue-600 font-black">{ing.cantidad} {ing.unidad}</span>
+                                  </span>
+                                </div>
+                              ))}
+                              {plato.resumen.length === 0 && (
+                                <p className="text-gray-400 italic text-xs font-bold uppercase">⚠️ Sin ingredientes configurados</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ACCIONES */}
+                      <div className="flex md:flex-col gap-3 self-center md:self-start">
+                        <button 
+                          onClick={() => { setSelectedPlato(plato); setModalOpen(true); }}
+                          className="flex items-center justify-center gap-2 px-4 py-2 bg-white border-2 border-black font-black text-[10px] uppercase shadow-[3px_3px_0px_#000000] hover:bg-yellow-400 transition-colors min-w-35"
+                        >
+                          {esAdmin ? (
+                            <>
+                              <Edit3 className="w-3 h-3" strokeWidth={3} />
+                              Gestionar Receta
+                            </>
+                          ) : (
+                            <>
+                              <Eye className="w-3 h-3" strokeWidth={3} />
+                              Ver Receta
+                            </>
+                          )}
+                        </button>
+
+                        <ProtectedButton permisos={['eliminar_recetas']}>
+                          <button 
+                            onClick={() => { setSelectedPlato(plato); setConfirmOpen(true); }}
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-white text-[#E53935] border-2 border-[#E53935] font-black text-[10px] uppercase shadow-[3px_3px_0px_#E53935] hover:bg-[#E53935] hover:text-white transition-all min-w-35"
+                          >
+                            <Trash2 className="w-3 h-3" strokeWidth={3} />
+                            Eliminar Todo
+                          </button>
+                        </ProtectedButton>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {modalOpen && (
@@ -139,8 +203,8 @@ export default function Recetas() {
 
       <ConfirmModal
         open={confirmOpen}
-        title="¿Eliminar toda la receta?"
-        message={`Se quitarán todos los ingredientes de: ${selectedPlato?.nombre}. Esta acción no se puede deshacer.`}
+        title="¿ELIMINAR TODA LA RECETA?"
+        message={`Se quitarán permanentemente todos los ingredientes de: ${selectedPlato?.nombre}.`}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={handleDeleteAll}
       />

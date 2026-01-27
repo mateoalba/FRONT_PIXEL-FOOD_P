@@ -2,6 +2,15 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
+/* Añade esto exactamente así */
+html, body {
+  max-width: 100% !important;
+  overflow-x: clip !important; /* Corta el contenido que se sale sin piedad */
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
 .pixel-font {
   font-family: 'Press Start 2P', monospace;
 }
