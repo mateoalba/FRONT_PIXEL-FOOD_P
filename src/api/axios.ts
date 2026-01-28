@@ -1,12 +1,11 @@
-import axios from "axios";
+import axios from 'axios';
 
 const instance = axios.create({
-  baseURL: "http://localhost:3000", // 👈 BACKEND REAL
-  headers: {
-    "Content-Type": "application/json",
-  },
+  // Usamos la variable de entorno de Vite
+  baseURL: import.meta.env.VITE_API_URL,
 });
 
+// Este interceptor es el que "pega" el token a cada mensaje que envías al server
 instance.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
 
@@ -16,6 +15,5 @@ instance.interceptors.request.use((config) => {
 
   return config;
 });
-
 
 export default instance;
